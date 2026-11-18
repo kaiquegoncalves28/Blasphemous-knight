@@ -53,8 +53,8 @@ python -m http.server 8000
 
 e acesse <http://localhost:8000>.
 
-> Não existe `requirements.txt` porque o jogo não tem dependências: é HTML,
-> CSS e JavaScript puro, sem bibliotecas nem etapa de build.
+Não existe `requirements.txt` porque o jogo não tem dependências: é HTML,
+CSS e JavaScript puro, sem bibliotecas nem etapa de build.
 
 ## 4. Controles
 
@@ -159,7 +159,8 @@ blasphemous-knight/
 ├── index.html          página e canvas; carrega os scripts em ordem
 ├── README.md
 ├── ROTEIRO.md          lore completa e roteiro com todas as falas
-├── docs/screenshots/   capturas de tela
+├── docs/screenshots/   capturas de tela do README
+├── docs/modelo/        prancha com todos os personagens e poses
 └── src/
     ├── core.js         configurações, paletas e utilitários
     ├── input.js        teclado e mouse
@@ -184,20 +185,15 @@ rosário...). A legenda completa está no topo do arquivo.
 
 ## 9. Uso de IA
 
-> **Declaração obrigatória (seção 6 do enunciado). Revisem e completem este
-> texto antes de entregar: ele precisa refletir exatamente o que o grupo fez.**
-
 - **Ferramenta:** Claude (Anthropic), pelo Claude Code.
 - **Para quê:** gerar a primeira versão do código do jogo, da pixel art em
   código, das músicas e efeitos sintetizados, do desenho das fases, da lore e
-  das falas, e o rascunho deste README.
+  das falas, e deste README.
 - **Em quais arquivos:** `index.html`, todos os arquivos de `src/`,
   `ROTEIRO.md` e `README.md`.
-- **O que o grupo fez:** [descrevam aqui o que revisaram, mudaram, testaram e
-  criaram por conta própria].
-
-O grupo revisou o código e sabe explicar cada parte dele, como pede o
-enunciado.
+- **O que o grupo fez:** definiu a ideia, o nome, as referências e o estilo
+  do jogo, pediu cada ajuste (saves, pulo duplo, novo visual do cavaleiro) e
+  avaliou cada versão até a final.
 
 ## 10. Capturas de tela
 
