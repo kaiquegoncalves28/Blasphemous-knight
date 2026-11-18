@@ -6,7 +6,7 @@
   BK.SPEAKERS = {
     narrador: { name: "", narration: true },
     // focus = ponto do desenho (em pixels) que fica no centro do retrato
-    aldric: { name: "Sir Aldric de Valmont", color: "#ece6d6", portrait: "knight.idle", scale: 2, focus: [16, 11], pitch: 0.8 },
+    aldric: { name: "Sir Aldric de Valmont", color: "#ece6d6", portrait: "knight.idle", scale: 2, focus: [56, 44], pitch: 0.8 },
     anselmo: { name: "Frei Anselmo", color: "#9fd3ff", portrait: "anselmo", scale: 2, focus: [10, 10], pitch: 1.1, ghost: true },
     isolde: { name: "Isolde", color: "#f2c46d", portrait: "isolde", scale: 2, focus: [9, 10], pitch: 1.4 },
     belial: { name: "Belial", color: "#ff4d3a", portrait: "belial", scale: 1, focus: [25, 24], pitch: 0.55 },

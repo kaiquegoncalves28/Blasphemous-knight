@@ -120,107 +120,317 @@
     return "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("");
   }
 
-  // ======================= SIR ALDRIC (32x32) =======================
-  const KNIGHT = {
-    O: "#1a1218", L: "#eef2f7", S: "#b9c1cd", D: "#6f7787", V: "#0b080d",
-    G: "#e0b54a", g: "#9a7428", W: "#ece6d6", w: "#c4bba8", s: "#9e9582",
-    R: "#c1272d", r: "#8a1a20", k: "#b3bac6", C: "#8b92a0", c: "#5d6370",
-    m: "#d9d2c2", n: "#8f8676", B: "#5a3a22", b: "#3a2416", H: "#4a3a30",
-    E: "#e9eef5", e: "#97a3b3"
+  // ======================= SIR ALDRIC (alta resolução, montado por "esqueleto") =======================
+  // O cavaleiro é desenhado a partir de juntas (quadril, joelho, tornozelo, ombro, cotovelo):
+  // cada pose só muda os ângulos. A resolução é dobrada (KNIGHT_RES): cada pixel lógico do
+  // jogo tem 2x2 pixels do desenho, então ele tem 4 vezes mais detalhe que o resto do cenário.
+  // Coordenadas abaixo: x para a frente (direita), y para baixo, chão em y = 71.
+  const KNIGHT_RES = 2;
+  const KW = 112; // largura do quadro (sobra espaço para a espada esticada)
+  const KH = 100;
+  const OX = 24; // deslocamento do boneco dentro do quadro
+  const OY = 28;
+  const KN = {
+    outline: "#16101a",
+    steel: "#b9c1cd", steelL: "#eef2f7", steelD: "#737b8b", visor: "#08060a",
+    gold: "#e0b54a", goldL: "#fff1b0", goldD: "#9a7428",
+    white: "#ece6d6", whiteL: "#fbf8f0", whiteD: "#c4bba8", whiteDD: "#9e9582",
+    red: "#c1272d", redD: "#86161c",
+    mail: "#8b92a0", mailL: "#b3bac6", mailD: "#5d6370", mailDD: "#41464f",
+    leather: "#5a3a22", leatherL: "#7d5634", leatherD: "#3a2416",
+    blade: "#e9eef5", bladeD: "#97a3b3", shield: "#ece6d6"
   };
-  const KNIGHT_BASE = [
-    "................................",
-    "...........OOOOOOOOO............",
-    "..........OLLSSSSSSDO...........",
-    "..........OLSSSSGSSDO..E........",
-    "..........OLSSSSGSSDO..Ee.......",
-    "..........OLSVVVGVVVO..Ee.......",
-    "..........OLSGGGGGGGO..Ee.......",
-    "..........OLSSSSGSDDO..Ee.......",
-    "..........OLSSSSGSVDO..Ee.......",
-    "..........OLSSSSGSDDO..Ee.......",
-    "..........OSSSSSSSVDO..Ee.......",
-    "...........OkCCCCCcO...Ee.......",
-    ".....OmnnOkCCCCCCCCCCO.Ee.......",
-    ".....OmnnOwWWWWWWWWkCO.Ee.......",
-    ".....OmnnOwWWWRRWWWkCO.Ee.......",
-    ".....OmnnOwWWWRRWWWCcO.Ee.......",
-    "....OmmnnOwRRRRRRRWCcO.Ee.......",
-    "....OmmnnOwrrRRRRrWCcO.Ee.......",
-    "....OmmnnOwWWWRRWWWCcgGGGGg.....",
-    "....OmmnnOBBBBGBBBBCcHHH........",
-    "....OmmnnOwWWWRRWWWCcHHH........",
-    "....OmmnnOwWWWRRWWWO...G........",
-    "...OmmmnnOwWWWWWWWWO............",
-    "...OmmmnnOswwWWWwwsO............",
-    "...Ommnn..OCCcOCCcO.............",
-    "....Omnn..OCCcOCCcO.............",
-    ".....OOO..OCCcOCCcO.............",
-    "..........OkCcOkCcO.............",
-    "..........OCCcOCCcO.............",
-    "..........ObBBObBBO.............",
-    "..........ObBBBObBBBO...........",
-    "..........OOOOOOOOOOO..........."
-  ];
 
-  const NO_SWORD = [];
-  for (let y = 2; y <= 17; y += 1) {
-    NO_SWORD.push([y, 22, ".........."]);
-  }
-  NO_SWORD.push([18, 21, "O.........."], [19, 21, "O.........."], [20, 21, "O.........."], [21, 22, ".........."]);
-
-  // braço longe do corpo: a lateral vira túnica
-  const ARM_AWAY = [];
-  for (let y = 13; y <= 21; y += 1) {
-    ARM_AWAY.push([y, 19, y === 19 ? "BO." : "WO."]);
+  // Preenche um polígono linha a linha (sem antisserrilhado: pixels "duros").
+  function polygonSpans(points) {
+    const ys = points.map((p) => p[1]);
+    const spans = [];
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y += 1) {
+      const cy = y + 0.5;
+      const xs = [];
+      for (let i = 0; i < points.length; i += 1) {
+        const [x1, y1] = points[i];
+        const [x2, y2] = points[(i + 1) % points.length];
+        if ((y1 <= cy && y2 > cy) || (y2 <= cy && y1 > cy)) {
+          xs.push(x1 + ((cy - y1) / (y2 - y1)) * (x2 - x1));
+        }
+      }
+      xs.sort((a, b) => a - b);
+      for (let i = 0; i + 1 < xs.length; i += 2) {
+        const a = Math.round(xs[i]);
+        const b = Math.round(xs[i + 1]);
+        if (b > a) {
+          spans.push([y, a, b]);
+        }
+      }
+    }
+    return spans;
   }
 
-  // manto esvoaçando (correndo, pulando)
-  const CAPE_FLY = [
-    [12, 0, ".....OmnnO"], [13, 0, "....OmmnnO"], [14, 0, "...OmmmnnO"], [15, 0, "..OmmmmnnO"],
-    [16, 0, ".OmmmmnnnO"], [17, 0, "OmmmmmnnnO"], [18, 0, "OmmmmnnnnO"], [19, 0, ".OOmmmnnnO"],
-    [20, 0, "...OOmmnnO"], [21, 0, ".....OmnnO"], [22, 0, "......OnnO"], [23, 0, "......OOnO"],
-    [24, 0, ".........."], [25, 0, ".........."], [26, 0, ".........."]
-  ];
-  const CAPE_SWAY = [[24, 0, "..Ommmnn.."], [25, 0, "...Ommn..."], [26, 0, "....OOO..."]];
+  function knightPainter(canvas) {
+    const g = canvas.getContext("2d");
+    let dy = OY;
+    const place = (points) => points.map(([x, y]) => [x + OX, y + dy]);
+    const fill = (points, color) => {
+      g.fillStyle = color;
+      for (const [y, a, b] of polygonSpans(place(points))) {
+        g.fillRect(a, y, b - a, 1);
+      }
+    };
+    return {
+      fill,
+      // contorno escuro de 1 px em volta de cada peça (separa perna da frente e de trás etc.)
+      outlined(points, color) {
+        for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          fill(points.map(([x, y]) => [x + ox, y + oy]), KN.outline);
+        }
+        fill(points, color);
+      },
+      // textura de cota de malha: pinta só os pixels que passam no teste
+      texture(points, color, test) {
+        g.fillStyle = color;
+        for (const [y, a, b] of polygonSpans(place(points))) {
+          for (let x = a; x < b; x += 1) {
+            if (test(x, y)) {
+              g.fillRect(x, y, 1, 1);
+            }
+          }
+        }
+      },
+      setShift(shift) {
+        dy = OY + shift;
+      }
+    };
+  }
 
-  const LEGS = {
-    spread: [
-      [26, 9, "OCCcO.OCCcO"], [27, 8, ".OkCcO..OkCcO.."], [28, 8, "OCCcO....OCCcO."],
-      [29, 8, "ObBBO....ObBBO."], [30, 8, "ObBBBO...ObBBBO"], [31, 8, "OOOOOO...OOOOOO"]
+  const polar = (p, length, angle) => [p[0] + Math.sin(angle) * length, p[1] + Math.cos(angle) * length]; // ângulo a partir da vertical para baixo
+  const circle = (cx, cy, r, n = 12) => Array.from({ length: n }, (_, i) => [cx + Math.cos((i / n) * Math.PI * 2) * r, cy + Math.sin((i / n) * Math.PI * 2) * r]);
+  const rotateAround = (x, y, angle, origin) => [origin[0] + x * Math.cos(angle) - y * Math.sin(angle), origin[1] + x * Math.sin(angle) + y * Math.cos(angle)];
+  const box = (x1, y1, x2, y2) => [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
+  function limb(a, b, wa, wb) {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const nx = -(b[1] - a[1]) / len;
+    const ny = (b[0] - a[0]) / len;
+    return [
+      [a[0] + nx * wa / 2, a[1] + ny * wa / 2], [b[0] + nx * wb / 2, b[1] + ny * wb / 2],
+      [b[0] - nx * wb / 2, b[1] - ny * wb / 2], [a[0] - nx * wa / 2, a[1] - ny * wa / 2]
+    ];
+  }
+  const raise = (points, bob) => points.map(([x, y]) => [x, y + bob]);
+
+  // membro com volume: cor base, faixa de luz, faixa de sombra e (opcional) malha
+  function shadedLimb(P, a, b, wa, wb, colors, mail) {
+    const poly = limb(a, b, wa, wb);
+    P.outlined(poly, colors.base);
+    if (mail) {
+      P.texture(poly, colors.dark, (x, y) => (x + 2 * y) % 4 === 0);
+      P.texture(poly, colors.light, (x, y) => (x + 2 * y) % 4 === 2 && y % 2 === 0);
+    }
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const nx = -(b[1] - a[1]) / len;
+    const ny = (b[0] - a[0]) / len;
+    const offset = (p, w, k) => [p[0] + nx * w * k, p[1] + ny * w * k];
+    P.fill(limb(offset(a, wa, 0.3), offset(b, wb, 0.3), wa * 0.28, wb * 0.28), colors.light);
+    P.fill(limb(offset(a, wa, -0.32), offset(b, wb, -0.32), wa * 0.3, wb * 0.3), colors.dark);
+  }
+
+  const MAIL = { base: KN.mail, light: KN.mailL, dark: KN.mailD };
+  const MAIL_BACK = { base: KN.mailD, light: KN.mail, dark: KN.mailDD };
+
+  function legGeometry(hip, [thigh, shin]) {
+    const knee = polar(hip, 15, thigh);
+    const ankle = polar(knee, 14, shin);
+    const footAngle = Math.max(-0.6, Math.min(0.7, -shin * 0.6));
+    const boot = [[-3, -3], [3, -3], [4, 0], [8, 1], [9, 3.5], [-3.5, 3.5]].map(([x, y]) => rotateAround(x, y, footAngle, ankle));
+    return { hip, knee, ankle, boot, footAngle };
+  }
+
+  function drawLeg(P, leg, back) {
+    const colors = back ? MAIL_BACK : MAIL;
+    shadedLimb(P, leg.hip, leg.knee, 7, 6, colors, true);
+    shadedLimb(P, leg.knee, leg.ankle, 6, 5, colors, true);
+    // joelheira de aço
+    P.outlined(circle(leg.knee[0] + 0.5, leg.knee[1], 2.7, 10), back ? KN.steelD : KN.steel);
+    P.fill(circle(leg.knee[0] - 0.2, leg.knee[1] - 0.9, 1.1, 8), back ? KN.steel : KN.steelL);
+    // bota de couro com sola e espora
+    P.outlined(leg.boot, back ? KN.leatherD : KN.leather);
+    const sole = [[-3.5, 2.4], [9, 2.4], [9, 3.5], [-3.5, 3.5]].map(([x, y]) => rotateAround(x, y, leg.footAngle, leg.ankle));
+    P.fill(sole, back ? KN.outline : KN.leatherD);
+    const cuff = [[-3, -3], [3, -3], [3.2, -1.8], [-3.2, -1.8]].map(([x, y]) => rotateAround(x, y, leg.footAngle, leg.ankle));
+    P.fill(cuff, back ? KN.leather : KN.leatherL);
+    const spur = rotateAround(-4.6, 1, leg.footAngle, leg.ankle);
+    P.fill(circle(spur[0], spur[1], 1.3, 6), back ? KN.goldD : KN.gold);
+  }
+
+  // saia da sobreveste: acompanha a coxa, então balança na corrida
+  function drawSkirt(P, hip, thigh, front) {
+    const angle = thigh * 0.8;
+    const center = polar(hip, 12.5, angle);
+    const perp = [Math.cos(angle), -Math.sin(angle)];
+    const half = 5;
+    const left = [center[0] - perp[0] * half, center[1] - perp[1] * half];
+    const right = [center[0] + perp[0] * half, center[1] + perp[1] * half];
+    const top = front ? [[30, 33.5], [38, 33.5]] : [[24.5, 33.5], [32, 33.5]];
+    P.outlined([top[0], top[1], right, left], front ? KN.white : KN.whiteD);
+    P.fill(limb(left, right, 1.6, 1.6), front ? KN.whiteD : KN.whiteDD);
+    if (front) {
+      P.fill([top[1], [top[1][0] - 2, top[1][1]], [right[0] - 2, right[1]], right], KN.whiteD);
+    }
+  }
+
+  function drawShield(P, bob) {
+    P.outlined(raise([[13, 18], [27, 18], [27, 29], [24.5, 35], [20, 39], [15.5, 35], [13, 29]], bob), KN.steelD);
+    P.fill(raise([[14.5, 19.5], [25.5, 19.5], [25.5, 28.6], [23.3, 34], [20, 37.2], [16.7, 34], [14.5, 28.6]], bob), KN.shield);
+    P.fill(raise([[22.5, 19.5], [25.5, 19.5], [25.5, 28.6], [23.3, 34], [20.5, 36.6]], bob), KN.whiteD);
+    P.fill(raise(box(19, 20.5, 21.2, 36), bob), KN.red);
+    P.fill(raise(box(15, 24.6, 25.2, 26.8), bob), KN.red);
+    P.fill(raise(box(20.6, 20.5, 21.2, 36), bob), KN.redD);
+  }
+
+  function drawTorso(P, bob) {
+    // ombros de cota de malha por baixo da sobreveste
+    P.outlined(raise([[22.5, 18], [39.5, 18], [40.5, 24], [21.5, 24]], bob), KN.mail);
+    // sobreveste branca
+    P.outlined(raise([[24, 19], [38, 19], [39, 23], [37.5, 35], [24.5, 35], [23, 23]], bob), KN.white);
+    P.fill(raise([[35.4, 19.4], [38, 19.4], [38.6, 23], [37.1, 34.6], [34.8, 34.6]], bob), KN.whiteD);
+    P.fill(raise([[24.4, 19.4], [25.8, 19.4], [25.6, 34.6], [25, 34.6], [23.5, 23]], bob), KN.whiteL);
+    // cruz pátea (pontas alargadas), símbolo da Ordem do Templo
+    P.fill(raise([[29.5, 20.4], [33.5, 20.4], [32.4, 23.5], [32.4, 29.5], [33.5, 32.6], [29.5, 32.6], [30.6, 29.5], [30.6, 23.5]], bob), KN.red);
+    P.fill(raise([[24.8, 23.5], [28, 24.6], [35, 24.6], [38.2, 23.5], [38.2, 28.5], [35, 27.4], [28, 27.4], [24.8, 28.5]], bob), KN.red);
+    P.fill(raise([[32, 23.5], [32.4, 23.5], [32.4, 29.5], [33.5, 32.6], [32, 32.6]], bob), KN.redD);
+    P.fill(raise([[28, 26.6], [35, 26.6], [38.2, 27.7], [38.2, 28.5], [35, 27.4], [28, 27.4], [24.8, 28.5], [24.8, 27.7]], bob), KN.redD);
+    // cinto com fivela
+    P.outlined(raise(box(24.5, 33, 37.5, 35.4), bob), KN.leather);
+    P.fill(raise(box(30, 32.6, 33, 35.9), bob), KN.gold);
+    P.fill(raise(box(31, 33.6, 32, 34.9), bob), KN.leatherD);
+  }
+
+  // elmo fechado (great helm) com fresta e cruz de reforço dourada
+  function drawHelm(P, bob) {
+    P.outlined(raise([[26.5, 13.5], [36.5, 13.5], [38, 19.5], [25, 19.5]], bob), KN.mail);
+    P.texture(raise([[26.5, 13.5], [36.5, 13.5], [38, 19.5], [25, 19.5]], bob), KN.mailD, (x, y) => (x + 2 * y) % 4 === 0);
+    P.outlined(raise([[25, 1.5], [38, 1.5], [38.6, 14.5], [24.6, 14.5]], bob), KN.steel);
+    P.fill(raise([[25.4, 2], [27.4, 2], [27.2, 14], [25.2, 14]], bob), KN.steelL);
+    P.fill(raise([[36.3, 2], [38, 2], [38.4, 14], [36.1, 14]], bob), KN.steelD);
+    P.fill(raise(box(25, 1.5, 38, 3), bob), KN.steelD);
+    P.fill(raise([[25, 12.9], [38.6, 12.9], [38.6, 14.5], [24.6, 14.5]], bob), KN.steelD);
+    P.fill(raise(box(28.4, 6, 38.6, 7.8), bob), KN.visor);
+    P.fill(raise(box(31.9, 3, 33.7, 12.9), bob), KN.gold);
+    P.fill(raise(box(28, 8, 38.6, 9.7), bob), KN.gold);
+    P.fill(raise(box(31.9, 3, 32.6, 12.9), bob), KN.goldL);
+    P.fill(raise(box(28, 8, 38.6, 8.6), bob), KN.goldL);
+    for (const [x, y] of [[35, 10.6], [37, 10.6], [36, 12]]) {
+      P.fill(raise(box(x, y, x + 1, y + 1), bob), KN.visor);
+    }
+    for (const x of [26.4, 29.6, 35.4]) {
+      P.fill(raise(box(x, 3.6, x + 1, 4.6), bob), KN.steelL);
+    }
+  }
+
+  function drawArm(P, shoulder, elbow, hand, back) {
+    shadedLimb(P, shoulder, elbow, 6, 5, back ? MAIL_BACK : MAIL, true);
+    shadedLimb(P, elbow, hand, 5, 4, back ? MAIL_BACK : MAIL, true);
+    P.outlined(circle(elbow[0], elbow[1], 2, 8), back ? KN.steelD : KN.steel);
+  }
+
+  function drawHand(P, hand, back) {
+    P.outlined(circle(hand[0], hand[1], 2.6, 10), back ? KN.leatherD : KN.leather);
+    P.fill(circle(hand[0] - 0.6, hand[1] - 0.8, 1, 6), back ? KN.leather : KN.leatherL);
+  }
+
+  // espada: pomo, empunhadura, guarda dourada e lâmina com sulco central
+  function drawSword(P, hand, angle) {
+    const d = [Math.cos(angle), Math.sin(angle)];
+    const n = [-d[1], d[0]];
+    const at = (t, s = 0) => [hand[0] + d[0] * t + n[0] * s, hand[1] + d[1] * t + n[1] * s];
+    P.outlined([at(4, -1.8), at(25, -1.6), at(30, 0), at(25, 1.6), at(4, 1.8)], KN.blade);
+    P.fill([at(5, 0), at(25, 0.2), at(29, 0), at(25, 1.4), at(5, 1.6)], KN.bladeD);
+    P.fill(limb(at(6), at(23), 0.9, 0.7), KN.bladeD);
+    P.outlined(limb(at(-4), at(3), 2.4, 2.4), KN.leatherD);
+    P.outlined(circle(...at(-5.2), 1.9, 8), KN.gold);
+    P.outlined(limb(at(3.6, -5.2), at(3.6, 5.2), 2.3, 2.3), KN.gold);
+    P.fill(limb(at(3.2, -4.6), at(3.2, 4.6), 0.8, 0.8), KN.goldL);
+  }
+
+  const BACK_HIP = [29, 38];
+  const FRONT_HIP = [33, 38];
+  const lowestBoot = (legs) => Math.max(...legs.flatMap((leg) => leg.boot.map((p) => p[1])));
+  const IDLE_LEGS = { back: [-0.12, 0.02], front: [0.14, -0.02] };
+  const IDLE_SHIFT = 71 - lowestBoot([legGeometry(BACK_HIP, IDLE_LEGS.back), legGeometry(FRONT_HIP, IDLE_LEGS.front)]);
+
+  // pose: { back, front: [coxa, canela], arm: [braço, antebraço, espada], backArm: [braço, antebraço], bob, air }
+  function knightFrame(pose) {
+    const canvas = makeCanvas(KW, KH);
+    const P = knightPainter(canvas);
+    const back = legGeometry(BACK_HIP, pose.back);
+    const front = legGeometry(FRONT_HIP, pose.front);
+    P.setShift(pose.air ? IDLE_SHIFT - 3 : 71 - lowestBoot([back, front]));
+    const bob = pose.bob || 0;
+
+    drawShield(P, bob);
+    const backShoulder = [27.5, 21 + bob];
+    const backElbow = polar(backShoulder, 8, pose.backArm[0]);
+    const backHand = polar(backElbow, 8, pose.backArm[1]);
+    drawArm(P, backShoulder, backElbow, backHand, true);
+    drawHand(P, backHand, true);
+    drawLeg(P, back, true);
+    drawSkirt(P, BACK_HIP, pose.back[0], false);
+    drawLeg(P, front, false);
+    drawTorso(P, bob);
+    drawSkirt(P, FRONT_HIP, pose.front[0], true);
+    drawHelm(P, bob);
+
+    const shoulder = [36, 21 + bob];
+    const elbow = polar(shoulder, 8, pose.arm[0]);
+    const hand = polar(elbow, 8, pose.arm[1]);
+    drawSword(P, hand, pose.arm[2]);
+    drawArm(P, shoulder, elbow, hand, false);
+    drawHand(P, hand, false);
+
+    addOutline(canvas, KN.outline);
+    return canvas;
+  }
+
+  // corrida em 6 quadros: coxas balançam em oposição, o joelho dobra quando a perna volta
+  function runPose(i) {
+    const phase = (i / 6) * Math.PI * 2;
+    const leg = (p) => {
+      const thigh = 0.62 * Math.sin(p);
+      return [thigh, thigh - (0.15 + 0.95 * Math.max(0, Math.cos(p)))];
+    };
+    return {
+      front: leg(phase),
+      back: leg(phase + Math.PI),
+      arm: [0.75, 0.15 + 0.2 * Math.sin(phase), -0.75],
+      backArm: [-0.5 * Math.sin(phase), -0.3 - 0.3 * Math.sin(phase)]
+    };
+  }
+
+  const LUNGE = { back: [-0.45, -0.25], front: [0.45, 0.05] };
+  const TUCK = { back: [0.35, -0.7], front: [0.95, -0.55], air: true };
+  const KNIGHT_POSES = {
+    idle: [
+      { ...IDLE_LEGS, arm: [0.25, 0.1, 1.15], backArm: [-0.15, 0.1] },
+      { ...IDLE_LEGS, arm: [0.25, 0.12, 1.12], backArm: [-0.15, 0.1], bob: 1 }
     ],
-    passA: [
-      [27, 8, "..OkCcO.OkCcO.."], [28, 8, "..OCCcO.ObBBBO."], [29, 8, "..ObBBO.OOOOOO."],
-      [30, 8, "..ObBBBO......."], [31, 8, "..OOOOOO......."]
+    run: [0, 1, 2, 3, 4, 5].map(runPose),
+    jump: [{ ...TUCK, arm: [1.2, 0.6, -0.6], backArm: [-0.9, -0.6] }],
+    fall: [{ back: [-0.35, -0.05], front: [0.3, 0.15], air: true, arm: [1.6, 1.3, -0.3], backArm: [-1.2, -1.0] }],
+    // golpes: quadro 0 = preparação, quadro 1 = impacto
+    attack: [
+      { ...LUNGE, arm: [-2.3, -2.6, -2.2], backArm: [0.6, 0.9] },
+      { ...LUNGE, arm: [1.5, 1.57, 0], backArm: [-0.8, -0.6] }
     ],
-    passB: [
-      [27, 8, "..OkCcO.OkCcO.."], [28, 8, ".ObBBBO.OCCcO.."], [29, 8, ".OOOOOO.ObBBO.."],
-      [30, 8, "........ObBBBO."], [31, 8, "........OOOOOO."]
+    attackUp: [
+      { ...IDLE_LEGS, arm: [0.9, 1.6, 2.3], backArm: [-0.3, 0] },
+      { ...IDLE_LEGS, arm: [2.75, 2.95, -1.57], backArm: [-0.4, -0.2] }
     ],
-    tuck: [
-      [26, 8, "..OkCcOkCcO...."], [27, 8, "..ObBBObBBO...."], [28, 8, "..ObBBBObBBBO.."],
-      [29, 8, "..OOOOOOOOOOO.."], [30, 8, "..............."], [31, 8, "..............."]
-    ]
+    attackDown: [
+      { ...TUCK, arm: [2.6, 2.9, -1.9], backArm: [-0.6, -0.3] },
+      { ...TUCK, arm: [0.15, 0.05, 1.57], backArm: [-0.9, -0.6] }
+    ],
+    hurt: [{ back: [-0.4, -0.1], front: [0.35, 0.2], arm: [-1.8, -2.2, -2.4], backArm: [-1.0, -1.2] }]
   };
-
-  const ARMS = {
-    // golpe lateral: braço estendido, espada na horizontal
-    forward: [
-      [13, 19, "kCO"], [14, 19, "kCCCCHHH"], [15, 19, "CccccHHH"],
-      [12, 26, "G"], [13, 26, "G"], [14, 26, "gEEEEE"], [15, 26, "geeeee"], [16, 26, "G"], [17, 26, "G"], [14, 31, "L"]
-    ],
-    up: [
-      [12, 19, "kCCO"], [4, 21, "CcO"], [5, 21, "CcO"], [6, 21, "CcO"], [7, 21, "CcO"], [8, 21, "CcO"],
-      [9, 21, "CcO"], [10, 21, "CcO"], [11, 21, "CcO"], [2, 21, "HHO"], [3, 21, "HHO"], [1, 21, "OO"]
-    ],
-    down: [[21, 19, "CcO"], [22, 19, "CcO"], [23, 19, "HHO"], [24, 19, "HHO"], [25, 19, "OO"]],
-    hurt: [
-      [12, 19, "kCCO"], [7, 21, "CcO"], [8, 21, "CcO"], [9, 21, "CcO"], [10, 21, "CcO"], [11, 21, "CcO"],
-      [5, 21, "HHO"], [6, 21, "HHO"], [4, 21, "OO"]
-    ]
-  };
-
-  const knight = (...changes) => fromRows(edit(KNIGHT_BASE, ...changes), KNIGHT);
 
   // ======================= DIABRETE (olha para a esquerda) =======================
   const IMP = {
@@ -496,8 +706,8 @@
     }
   });
   const helmIcon = () => paint(9, 9, (p) => {
-    p(0, 0, 9, 9, KNIGHT.O); p(1, 1, 7, 7, KNIGHT.S); p(1, 1, 1, 6, KNIGHT.L);
-    p(2, 3, 6, 1, KNIGHT.V); p(5, 1, 1, 7, KNIGHT.G); p(3, 4, 5, 1, KNIGHT.G);
+    p(0, 0, 9, 9, KN.outline); p(1, 1, 7, 7, KN.steel); p(1, 1, 1, 6, KN.steelL);
+    p(2, 3, 6, 1, KN.visor); p(5, 1, 1, 7, KN.gold); p(3, 4, 5, 1, KN.gold);
   });
   const checkpoint = (lit) => paint(16, 24, (p) => {
     p(2, 18, 12, 6, "#4a4048"); p(1, 17, 14, 1, "#6a5f68"); p(2, 23, 12, 1, "#2a2428");
@@ -645,17 +855,15 @@
 
   // ======================= registro =======================
   const frames = {};
+  const resolution = {}; // pixels do desenho por pixel lógico (1 = normal)
   const cache = new Map();
   const register = (name, list) => { frames[name] = list; };
 
-  register("knight.idle", [knight(), knight(CAPE_SWAY, [[6, 23, "L"]])]);
-  register("knight.run", [LEGS.spread, LEGS.passA, LEGS.spread, LEGS.passB].map((legs) => knight(CAPE_FLY, legs)));
-  register("knight.jump", [knight(CAPE_FLY, LEGS.tuck)]);
-  register("knight.fall", [knight(LEGS.spread)]);
-  register("knight.attack", [knight(NO_SWORD, ARM_AWAY, ARMS.forward, LEGS.spread)]);
-  register("knight.attackUp", [knight(NO_SWORD, ARM_AWAY, ARMS.up)]);
-  register("knight.attackDown", [knight(NO_SWORD, ARMS.down, CAPE_FLY, LEGS.tuck)]);
-  register("knight.hurt", [knight(NO_SWORD, ARM_AWAY, ARMS.hurt, CAPE_FLY, LEGS.spread)]);
+  // cavaleiro: quadros gerados a partir das poses, em resolução dobrada
+  for (const [pose, list] of Object.entries(KNIGHT_POSES)) {
+    register("knight." + pose, list.map(knightFrame));
+    resolution["knight." + pose] = KNIGHT_RES;
+  }
 
   register("imp", IMP_FRAMES.map((changes) => fromRows(edit(IMP_BASE, changes), IMP, "#14030a")));
   register("wraith", WRAITH_FRAMES.map((changes) => fromRows(edit(WRAITH_BASE, changes), WRAITH, "#0b0614")));
@@ -712,6 +920,7 @@
       return canvas;
     },
     count: (name) => frames[name].length,
+    res: (name) => resolution[name] || 1,
     theme(themeName) {
       if (!themeTiles[themeName]) {
         const th = BK.THEMES[themeName];

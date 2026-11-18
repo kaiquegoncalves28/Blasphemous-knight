@@ -83,7 +83,7 @@
   <body>
     <main>
       <h1>Blasphemous Knight: personagens</h1>
-      <p class="sub">Pixel art redesenhada com sombreado e contorno. Tamanho ampliado para visualização.</p>
+      <p class="sub">Pixel art com sombreado e contorno; Sir Aldric em resolução dobrada. Tamanho ampliado para visualização.</p>
       <h2>Sir Aldric: todas as poses</h2>
       <div class="row" id="knight"></div>
       <h2>Personagens da história</h2>
@@ -100,11 +100,15 @@
         function add(target, name, frame, scale, label) {
           const source = BK.sprites.get(name, frame);
           const canvas = document.createElement("canvas");
-          canvas.width = source.width * scale;
-          canvas.height = source.height * scale;
+          // o cavaleiro é desenhado em resolução dobrada; o quadro dele tem sobra para a espada,
+          // então recortamos a área do boneco (x 18..102)
+          const res = BK.sprites.res(name);
+          const crop = res > 1 ? [18, 0, 84, source.height] : [0, 0, source.width, source.height];
+          canvas.width = crop[2] * scale / res;
+          canvas.height = crop[3] * scale / res;
           const g = canvas.getContext("2d");
           g.imageSmoothingEnabled = false;
-          g.drawImage(source, 0, 0, canvas.width, canvas.height);
+          g.drawImage(source, ...crop, 0, 0, canvas.width, canvas.height);
           const card = document.createElement("div");
           card.className = "card";
           card.appendChild(canvas);
@@ -114,12 +118,15 @@
           document.getElementById(target).appendChild(card);
         }
         const knight = [
-          ["knight.idle", 0, "Parado"], ["knight.run", 0, "Correndo 1"], ["knight.run", 1, "Correndo 2"],
-          ["knight.run", 3, "Correndo 3"], ["knight.jump", 0, "Pulo"], ["knight.fall", 0, "Queda"],
-          ["knight.attack", 0, "Golpe"], ["knight.attackUp", 0, "Golpe para cima"],
-          ["knight.attackDown", 0, "Golpe para baixo"], ["knight.hurt", 0, "Dano"]
+          ["knight.idle", 0, "Parado"], ["knight.run", 0, "Corrida 1"], ["knight.run", 1, "Corrida 2"],
+          ["knight.run", 2, "Corrida 3"], ["knight.run", 3, "Corrida 4"], ["knight.run", 4, "Corrida 5"],
+          ["knight.run", 5, "Corrida 6"], ["knight.jump", 0, "Pulo"], ["knight.fall", 0, "Queda"],
+          ["knight.attack", 0, "Golpe (preparo)"], ["knight.attack", 1, "Golpe"],
+          ["knight.attackUp", 0, "Para cima (preparo)"], ["knight.attackUp", 1, "Golpe para cima"],
+          ["knight.attackDown", 0, "Para baixo (preparo)"], ["knight.attackDown", 1, "Golpe para baixo"],
+          ["knight.hurt", 0, "Dano"]
         ];
-        knight.forEach(([name, frame, label]) => add("knight", name, frame, 4, label));
+        knight.forEach(([name, frame, label]) => add("knight", name, frame, 5, label));
         add("story", "isolde", 0, 4, "Isolde");
         add("story", "anselmo", 0, 4, "Frei Anselmo");
         add("story", "belial", 0, 3, "Belial");

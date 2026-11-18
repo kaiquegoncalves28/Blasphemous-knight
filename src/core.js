@@ -26,9 +26,9 @@ window.BK = window.BK || {};
     jumpBuffer: 0.12, // pulo apertado pouco antes de tocar o chão vale
     pogoSpeed: 340, // impulso do golpe para baixo ao acertar algo
 
-    // Jogador (área de colisão; o desenho tem 32x32)
+    // Jogador (área de colisão; o desenho tem ~35 px de altura, em resolução dobrada)
     playerW: 12,
-    playerH: 27,
+    playerH: 30,
     playerMaxHp: 5,
     startingLives: 3,
     invulnTime: 1.0,

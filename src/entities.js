@@ -234,8 +234,8 @@
         return { x: this.x - 6, y: this.y + this.h - 4, w: 24, h: 24 };
       }
       return this.facing > 0
-        ? { x: this.x + this.w - 2, y: this.y, w: 28, h: 20 }
-        : { x: this.x - 26, y: this.y, w: 28, h: 20 };
+        ? { x: this.x + this.w - 2, y: this.y - 2, w: 26, h: 22 }
+        : { x: this.x - 24, y: this.y - 2, w: 26, h: 22 };
     }
 
     resolveAttack(L) {
@@ -350,13 +350,13 @@
       }
       if (this.attack) {
         const name = { side: "knight.attack", up: "knight.attackUp", down: "knight.attackDown" }[this.attack.kind];
-        return [name, 0];
+        return [name, this.attack.t < 0.05 ? 0 : 1]; // preparação rápida, depois o impacto
       }
       if (!this.onGround) {
         return [this.vy < 0 ? "knight.jump" : "knight.fall", 0];
       }
       if (Math.abs(this.vx) > 12) {
-        return ["knight.run", Math.floor(this.animT * 11)];
+        return ["knight.run", Math.floor(this.animT * 13)];
       }
       return ["knight.idle", Math.floor(this.animT * 2)];
     }
@@ -367,14 +367,19 @@
       }
       const [name, frame] = this.sprite();
       const image = BK.sprites.get(name, frame, this.facing < 0);
-      const x = Math.round(this.cx - 16);
-      const y = Math.round(this.y + this.h - 32);
+      // desenho em resolução dobrada: cada pixel dele ocupa meio pixel lógico
+      const res = BK.sprites.res(name);
+      const w = image.width / res;
+      const h = image.height / res;
+      const snap = (v) => Math.round(v * res) / res;
+      const x = snap(this.cx - w / 2);
+      const y = snap(this.y + this.h - h + 0.5);
       if (this.dead) {
         g.save();
-        g.translate(x + 16, y + 26);
+        g.translate(this.cx, this.y + this.h - 6);
         g.rotate(-this.facing * Math.min(this.deadT * 5, Math.PI / 2));
         g.globalAlpha = Math.max(0, 1 - Math.max(0, this.deadT - 0.6));
-        g.drawImage(image, -16, -26);
+        g.drawImage(image, -w / 2, -h + 6.5, w, h);
         g.restore();
         return;
       }
@@ -390,7 +395,7 @@
         g.stroke();
         g.restore();
       }
-      g.drawImage(image, x, y);
+      g.drawImage(image, x, y, w, h);
       if (this.attack) {
         BK.render.drawSlash(g, this);
       }

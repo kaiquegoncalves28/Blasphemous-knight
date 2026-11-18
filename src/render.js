@@ -98,7 +98,7 @@
     const ease = 1 - Math.pow(1 - progress, 3);
     const f = player.facing;
     let cx = player.cx;
-    let cy = player.y + 9;
+    let cy = player.y + 6; // altura do ombro do cavaleiro
     let from;
     let to;
     if (attack.kind === "side") {
@@ -108,7 +108,7 @@
     } else if (attack.kind === "up") {
       from = -Math.PI * 0.95;
       to = -Math.PI * 0.05;
-      cy = player.y + 2;
+      cy = player.y;
     } else {
       from = Math.PI * 0.05;
       to = Math.PI * 0.95;
@@ -457,7 +457,7 @@
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, 51, 51);
     const image = BK.sprites.get(speaker.portrait, 0);
-    const scale = speaker.scale;
+    const scale = speaker.scale / BK.sprites.res(speaker.portrait);
     const w = image.width * scale;
     const h = image.height * scale;
     // "focus" é o ponto do desenho (rosto/peito) que fica no centro do quadro
@@ -539,6 +539,7 @@
 
   function bigSprite(name, frame, x, y, scale, o = {}) {
     const image = BK.sprites.get(name, frame, !!o.flip);
+    scale /= BK.sprites.res(name); // o cavaleiro tem resolução dobrada
     ctx.save();
     if (o.alpha !== undefined) {
       ctx.globalAlpha = o.alpha;
@@ -568,7 +569,7 @@
     },
     pacto(time) {
       gradientFill("#07030a", "#2a0606");
-      bigSprite("knight.hurt", 0, 150, 175, 3);
+      bigSprite("knight.hurt", 0, 150, 182, 2);
       const pulse = 0.6 + Math.sin(time * 2) * 0.2;
       glowOrb(ctx, 330, 110, 60, "#5a0000", 0.5);
       bigSprite("stranger", 0, 330, 175, 2, { alpha: pulse + 0.2 });
@@ -625,15 +626,15 @@
       }
       ctx.restore();
       glowOrb(ctx, W / 2, 120, 50, "#c1272d", 0.4);
-      bigSprite("knight.idle", Math.floor(time * 2), W / 2, 188, 4);
+      bigSprite("knight.idle", Math.floor(time * 2), W / 2, 196, 4);
       drawEmbers("#ff8a3d", 0, 1 / 60, time);
     },
     trono(time) {
       drawBackground("throne", time * 5, 1 / 60, time);
       ctx.fillStyle = "#1e0d0f";
       ctx.fillRect(0, 175, W, H);
-      bigSprite("knight.idle", Math.floor(time * 2), 180, 178, 3);
-      bigSprite("isolde", 0, 290, 178, 3, { flip: true });
+      bigSprite("knight.idle", Math.floor(time * 2), 180, 179, 2);
+      bigSprite("isolde", 0, 290, 178, 2, { flip: true });
       glowOrb(ctx, 290, 140, 30, "#fff1c4", 0.3);
     },
     luz(time) {
@@ -643,8 +644,8 @@
       ctx.fillRect(0, 175, W, H);
       ctx.fillStyle = "#5a7a3a";
       ctx.fillRect(0, 175, W, 4);
-      bigSprite("knight.idle", 0, 215, 178, 3);
-      bigSprite("isolde", 0, 260, 178, 3, { flip: true });
+      bigSprite("knight.idle", 0, 210, 179, 2);
+      bigSprite("isolde", 0, 262, 178, 2, { flip: true });
       ctx.fillStyle = "rgba(255,240,200,0.5)";
       for (let i = 0; i < 20; i += 1) {
         const x = (i * 53 + time * 12) % W;
@@ -674,7 +675,7 @@
       ctx.fillRect(W / 2 + 32, 130, 18, 48);
       ctx.fillRect(W / 2 - 70, 178, 140, 8);
       ctx.fillRect(W / 2 - 90, 186, 180, 8);
-      bigSprite("knight.idle", 0, W / 2, 178, 3);
+      bigSprite("knight.idle", 0, W / 2, 179, 2);
       ctx.fillStyle = "#ff2a2a";
       ctx.globalAlpha = 0.6 + Math.sin(time * 2) * 0.3;
       ctx.fillRect(W / 2 + 1, 132, 12, 2);
@@ -703,7 +704,7 @@
     ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.fillRect(0, 0, W, H);
     glowOrb(ctx, W / 2, 230, 80, "#c1272d", 0.35);
-    bigSprite("knight.idle", Math.floor(time * 2), W / 2, 264, 2);
+    bigSprite("knight.idle", Math.floor(time * 2), W / 2, 268, 2);
     ctx.save();
     ctx.shadowColor = "#ff2a1a";
     ctx.shadowBlur = 10;
