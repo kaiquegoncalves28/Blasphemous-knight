@@ -113,11 +113,11 @@ falas de Frei Anselmo na primeira fase.
 
 | Integrante | O que fez |
 |---|---|
-| Pedro Henrique Espinosa Mantana | [preencher] |
-| Kaique Gonçalves da Silva | [preencher] |
-| Gustavo Trajano Dos Reis Padilha | [preencher] |
-| João Paulo de Mattos Queiroz | [preencher] |
-| Hyohan Mertz Santamaria | [preencher] |
+| Pedro Henrique Espinosa Mantana |  |
+| Kaique Gonçalves da Silva |  |
+| Gustavo Trajano Dos Reis Padilha |  |
+| João Paulo de Mattos Queiroz |  |
+| Hyohan Mertz Santamaria |  |
 
 ## 7. Créditos
 
