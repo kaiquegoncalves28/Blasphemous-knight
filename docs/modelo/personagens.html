@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Personagens do Jogo</title>
+    <style>
+      :root {
+        --bg: #0d0608;
+        --panel: #1a0d10;
+        --line: #6b4a2a;
+        --text: #e9dcc0;
+        --muted: #a8988a;
+        --gold: #e0b54a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px 16px 32px;
+        background: radial-gradient(ellipse at top, #2a0a0a 0%, var(--bg) 70%);
+        color: var(--text);
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--gold);
+        font-size: 28px;
+      }
+
+      h2 {
+        margin: 22px 0 10px;
+        color: var(--gold);
+        font-size: 18px;
+        font-weight: normal;
+      }
+
+      .sub {
+        margin: 4px 0 8px;
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px;
+      }
+
+      .card span {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      canvas {
+        display: block;
+        margin: 0 auto;
+        image-rendering: pixelated;
+        background: repeating-conic-gradient(#241417 0% 25%, #1c0f12 0% 50%) 0 0 / 16px 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Blasphemous Knight: personagens</h1>
+      <p class="sub">Pixel art redesenhada com sombreado e contorno. Tamanho ampliado para visualização.</p>
+      <h2>Sir Aldric: todas as poses</h2>
+      <div class="row" id="knight"></div>
+      <h2>Personagens da história</h2>
+      <div class="row" id="story"></div>
+      <h2>Inimigos</h2>
+      <div class="row" id="enemies"></div>
+    </main>
+
+    <script src="../../src/core.js"></script>
+    <script src="../../src/sprites.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        function add(target, name, frame, scale, label) {
+          const source = BK.sprites.get(name, frame);
+          const canvas = document.createElement("canvas");
+          canvas.width = source.width * scale;
+          canvas.height = source.height * scale;
+          const g = canvas.getContext("2d");
+          g.imageSmoothingEnabled = false;
+          g.drawImage(source, 0, 0, canvas.width, canvas.height);
+          const card = document.createElement("div");
+          card.className = "card";
+          card.appendChild(canvas);
+          const caption = document.createElement("span");
+          caption.textContent = label;
+          card.appendChild(caption);
+          document.getElementById(target).appendChild(card);
+        }
+        const knight = [
+          ["knight.idle", 0, "Parado"], ["knight.run", 0, "Correndo 1"], ["knight.run", 1, "Correndo 2"],
+          ["knight.run", 3, "Correndo 3"], ["knight.jump", 0, "Pulo"], ["knight.fall", 0, "Queda"],
+          ["knight.attack", 0, "Golpe"], ["knight.attackUp", 0, "Golpe para cima"],
+          ["knight.attackDown", 0, "Golpe para baixo"], ["knight.hurt", 0, "Dano"]
+        ];
+        knight.forEach(([name, frame, label]) => add("knight", name, frame, 4, label));
+        add("story", "isolde", 0, 4, "Isolde");
+        add("story", "anselmo", 0, 4, "Frei Anselmo");
+        add("story", "belial", 0, 3, "Belial");
+        add("story", "belial", 2, 3, "Belial (atacando)");
+        add("story", "stranger", 0, 3, "O Estranho");
+        add("enemies", "imp", 0, 5, "Diabrete");
+        add("enemies", "imp", 1, 5, "Diabrete (andando)");
+        add("enemies", "wraith", 0, 5, "Alma Penada");
+        add("enemies", "cultist", 0, 4, "Templário Caído");
+        add("enemies", "cultist", 1, 4, "Templário Caído (feitiço)");
+      })();
+    </script>
+  </body>
+</html>

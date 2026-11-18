@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Modelo do Cavaleiro</title>
+    <style>
+      :root {
+        --bg: #0d0608;
+        --panel: #1a0d10;
+        --line: #6b4a2a;
+        --text: #e9dcc0;
+        --muted: #a8988a;
+        --gold: #e0b54a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px 16px 32px;
+        background: radial-gradient(ellipse at top, #2a0a0a 0%, var(--bg) 70%);
+        color: var(--text);
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--gold);
+        font-size: 28px;
+        letter-spacing: 1px;
+      }
+
+      .sub {
+        margin: 4px 0 20px;
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 12px;
+      }
+
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: var(--gold);
+        font-weight: normal;
+      }
+
+      canvas {
+        display: block;
+        image-rendering: pixelated;
+      }
+
+      .compare {
+        margin-top: 16px;
+      }
+
+      .palette {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 6px 14px;
+        margin-top: 16px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .swatch {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .swatch span:first-child {
+        width: 16px;
+        height: 16px;
+        border: 1px solid #000;
+        flex: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Sir Aldric: modelo 2</h1>
+      <p class="sub">Cavaleiro templário em 32×32 pixels. Proposta para substituir o modelo atual (24×24).</p>
+
+      <div class="row" id="frames"></div>
+
+      <div class="card compare">
+        <h2>No tamanho do jogo (zoom 2×, como aparece na tela) · atual à esquerda, novo à direita</h2>
+        <canvas id="scene" width="960" height="200"></canvas>
+      </div>
+
+      <div class="card compare">
+        <h2>Paleta</h2>
+        <div class="palette" id="palette"></div>
+      </div>
+    </main>
+
+    <script src="../../src/core.js"></script>
+    <script src="../../src/sprites.js"></script>
+    <script src="cavaleiro-v2.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        const model = window.KNIGHT_V2;
+        const labels = { idle: "Parado", walk: "Andando", attack: "Atacando" };
+
+        // poses ampliadas (8x)
+        const frames = document.getElementById("frames");
+        for (const name of Object.keys(model.frames)) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<h2>${labels[name]}</h2>`;
+          const canvas = model.render(name, 9);
+          canvas.style.background = "repeating-conic-gradient(#241417 0% 25%, #1c0f12 0% 50%) 0 0 / 18px 18px";
+          card.appendChild(canvas);
+          frames.appendChild(card);
+        }
+
+        // comparação em cena: blocos do Círculo I, zoom 2x
+        const scene = document.getElementById("scene");
+        const g = scene.getContext("2d");
+        g.imageSmoothingEnabled = false;
+        g.scale(2, 2);
+        const sky = g.createLinearGradient(0, 0, 0, 100);
+        sky.addColorStop(0, "#120405");
+        sky.addColorStop(1, "#5c1608");
+        g.fillStyle = sky;
+        g.fillRect(0, 0, 480, 100);
+        const tiles = BK.sprites.theme("ash");
+        for (let x = 0; x < 480; x += 16) {
+          g.drawImage(tiles.groundTop[(x / 16) % 3], x, 72);
+          g.drawImage(tiles.ground[(x / 16 + 1) % 3], x, 88);
+        }
+        // modelo atual (24x24)
+        g.drawImage(BK.sprites.get("knight.idle", 0), 60, 48);
+        g.drawImage(BK.sprites.get("knight.attack", 0), 110, 48);
+        // modelo novo (32x32)
+        g.drawImage(model.render("idle"), 250, 40);
+        g.drawImage(model.render("walk"), 300, 40);
+        g.drawImage(model.render("attack"), 350, 40);
+        g.fillStyle = "#e9dcc0";
+        g.font = "bold 8px Georgia";
+        g.fillText("ATUAL", 82, 16);
+        g.fillText("NOVO", 312, 16);
+
+        // paleta
+        const palette = document.getElementById("palette");
+        for (const [key, [color, name]] of Object.entries(model.palette)) {
+          const item = document.createElement("div");
+          item.className = "swatch";
+          item.innerHTML = `<span style="background:${color}"></span><span>${key} · ${name}</span>`;
+          palette.appendChild(item);
+        }
+      })();
+    </script>
+  </body>
+</html>
